@@ -1,7 +1,8 @@
-// lib/main.dart
-import 'package:agora/videoCall/view/view.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import 'module/home/view/view.dart';
 
 void main() {
   runApp(MyApp());

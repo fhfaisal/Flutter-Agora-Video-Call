@@ -8,6 +8,7 @@ class DoctorController extends GetxController {
   var isInitialized = false.obs;
   var isMicOn = true.obs;
   var isCameraOn = true.obs;
+  var patientUid = 1; // Variable to store the remote patient's UID
 
   @override
   void onInit() {
@@ -20,27 +21,37 @@ class DoctorController extends GetxController {
     if (!hasPermissions) return;
 
     engine = createAgoraRtcEngine();
-    await engine.initialize(
-      RtcEngineContext(appId: AppIdToken.id),
+    await engine.initialize(RtcEngineContext(appId: AppIdToken.id));
+
+    await engine.enableVideo();
+    await engine.startPreview();
+    isInitialized.value = true;
+    engine.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          print('Doctor joined channel');
+        },
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          patientUid = remoteUid;  // Save the patient's UID
+          print('Patient joined with UID: $remoteUid');
+        },
+        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+          print('Patient left the call');
+        },
+      ),
     );
 
-    // Enable video and start the preview
     await engine.enableVideo();
     await engine.startPreview();
 
-    // Join the channel
-    try {
-      await engine.joinChannel(
-        token: AppIdToken.token,
-        channelId: AppIdToken.channel,
-        uid: 0, // Doctor's UID
-        options: const ChannelMediaOptions(),
-      );
-      print("Joined channel successfully.");
-      isInitialized.value = true;
-    } catch (e) {
-      print("Error joining channel: $e");
-    }
+    await engine.joinChannel(
+      token: AppIdToken.token,
+      channelId: AppIdToken.channel,
+      uid: 101, // Doctor's UID
+      options: const ChannelMediaOptions(),
+    );
+
+    isInitialized.value = true;
   }
 
   void toggleMic() {

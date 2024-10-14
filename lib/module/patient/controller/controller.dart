@@ -1,14 +1,16 @@
 import 'package:get/get.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
-import '../../utils/constants/app_id_token.dart';
+import '../../../utils/constants/app_id_token.dart';
 
 class PatientController extends GetxController {
   late RtcEngine engine;
   var isInitialized = false.obs;
   var isMicOn = true.obs;
   var isCameraOn = true.obs;
-  late int doctorUserId; // This should be set properly
+
+  // Store the selected doctor's UID
+  var selectedDoctorUid=0.obs;
 
   @override
   void onInit() {
@@ -16,27 +18,39 @@ class PatientController extends GetxController {
     initializeAgora();
   }
 
-  Future<void> initializeAgora() async {
+  void initializeAgora() async {
     final hasPermissions = await AppIdToken.requestPermissions();
     if (!hasPermissions) return;
+
     engine = createAgoraRtcEngine();
-    await engine.initialize(
-      RtcEngineContext(appId: AppIdToken.id),
+    await engine.initialize(RtcEngineContext(appId: AppIdToken.id));
+
+    engine.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          print('Patient joined channel');
+        },
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          if (remoteUid == selectedDoctorUid.value) {
+            print('Doctor joined with UID: $remoteUid');
+          }
+        },
+        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+          print('Doctor left the call');
+        },
+      ),
     );
-    // Enable video and start the preview
+
     await engine.enableVideo();
     await engine.startPreview();
 
-    // Join the channel
-    await engine.joinChannel(
+    engine.joinChannel(
       token: AppIdToken.token,
       channelId: AppIdToken.channel,
-      uid: 0, // Patient's UID
-      options: ChannelMediaOptions(),
+      uid: 1, // Patient's UID (Make sure this is unique)
+      options: const ChannelMediaOptions(),
     );
 
-    // Set doctorUserId to the actual doctor's UID who is in the call
-    doctorUserId = 1; // Replace with actual doctor's UID
     isInitialized.value = true;
   }
 
