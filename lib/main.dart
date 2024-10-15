@@ -1,5 +1,5 @@
 // lib/main.dart
-import 'package:agora/videoCall/view/view.dart';
+import 'package:agora/module/home/view/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: VideoCallView(),
+      home: HomeView(),
     );
   }
 }
