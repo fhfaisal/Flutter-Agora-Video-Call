@@ -1,15 +1,14 @@
-import 'package:agora/utils/constants/app_id_token.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:agora_uikit/agora_uikit.dart';
 import 'package:get/get.dart';
-import 'package:permission_handler/permission_handler.dart';
 
-class DoctorController extends GetxController {
+class VideoCallController extends GetxController {
   late AgoraClient agoraClient;
   var isInitialized = false.obs; // Observable to track initialization
-  final String appId = AppIdToken.id; // Replace with your Agora App ID
-  final String channelName = 'doctor_channel'; // Unique channel for doctor calls
-  final String tempToken = AppIdToken.token; // Replace with your token
+  final appId = 'c57f66b24eae464ba041634d990de9ed';
+  final channelName = '1';
+  final tempToken =
+      '007eJxTYHgjlnleMkPN9PGnbY4sl7omWJtGsN+O6BB0e2Iya73/aU4FhmRT8zQzsyQjk9TEVBMzk6REAxNDM2OTFEtLg5RUy9SULV840hsCGRmmr/RiYIRCEJ+RwZCBAQCP5hzr';
 
   @override
   void onInit() {
@@ -19,23 +18,23 @@ class DoctorController extends GetxController {
 
   Future<void> initAgora() async {
     try {
-      // Request camera and microphone permissions
+      // Ensure that permissions are requested sequentially
       var cameraStatus = await Permission.camera.request();
       var micStatus = await Permission.microphone.request();
 
-      // Check if both permissions are granted
+      // Check if both permissions are granted before proceeding
       if (cameraStatus.isGranted && micStatus.isGranted) {
-        // Initialize Agora client
+        // Agora client initialization with AgoraConnectionData
         agoraClient = AgoraClient(
           agoraConnectionData: AgoraConnectionData(
-            appId: appId,
-            channelName: channelName,
-            tempToken: tempToken,
+            appId: appId, // Replace with your Agora App ID
+            channelName: channelName, // Replace with your channel name
+            tempToken: tempToken, // Replace with your token
           ),
         );
 
         await agoraClient.initialize();
-        acceptCall();
+
         // Mark Agora as initialized
         isInitialized.value = true;
       } else {
@@ -54,11 +53,11 @@ class DoctorController extends GetxController {
     }
   }
 
-  void acceptCall() {
+  void startCall() {
     agoraClient.engine.joinChannel(
-      token: tempToken,
-      channelId: channelName,
-      options: const ChannelMediaOptions(),
+      token: tempToken, // Replace with your actual token
+      channelId: channelName, // Replace with your actual channel name
+      options: const ChannelMediaOptions(), // Required parameter now
       uid: 0,
     );
   }

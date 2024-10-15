@@ -1,58 +1,77 @@
+import 'package:agora_uikit/agora_uikit.dart';
 import 'package:get/get.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
 import '../../utils/constants/app_id_token.dart';
 
 class PatientController extends GetxController {
-  late RtcEngine engine;
-  var isInitialized = false.obs;
-  var isMicOn = true.obs;
-  var isCameraOn = true.obs;
-  late int doctorUserId; // This should be set properly
+  late AgoraClient agoraClient;
+  var isInitialized = false.obs; // Observable to track initialization
+  final String appId = AppIdToken.id; // Replace with your Agora App ID
+  final String channelName = AppIdToken.channel; // Unique channel for patient calls
+  final String tempToken = AppIdToken.token; // Replace with your token
 
   @override
   void onInit() {
     super.onInit();
-    initializeAgora();
+    initAgora();
   }
 
-  Future<void> initializeAgora() async {
-    final hasPermissions = await AppIdToken.requestPermissions();
-    if (!hasPermissions) return;
-    engine = createAgoraRtcEngine();
-    await engine.initialize(
-      RtcEngineContext(appId: AppIdToken.id),
+  Future<void> initAgora() async {
+    try {
+      // Request camera and microphone permissions
+      var cameraStatus = await Permission.camera.request();
+      var micStatus = await Permission.microphone.request();
+
+      // Check if both permissions are granted
+      if (cameraStatus.isGranted && micStatus.isGranted) {
+        // Initialize Agora client
+        agoraClient = AgoraClient(
+          agoraConnectionData: AgoraConnectionData(
+            appId: appId,
+            channelName: channelName,
+            tempToken: tempToken,
+          ),
+        );
+
+        await agoraClient.initialize();
+
+        // Mark Agora as initialized
+        isInitialized.value = true;
+      } else {
+        Get.snackbar(
+          "Permissions Denied",
+          "Camera and Microphone permissions are required for video calling.",
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Failed to initialize Agora: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  void startCall() {
+    agoraClient.engine.joinChannel(
+      token: tempToken,
+      channelId: channelName,
+      options: const ChannelMediaOptions(),
+      uid: 0,
     );
-    // Enable video and start the preview
-    await engine.enableVideo();
-    await engine.startPreview();
-
-    // Join the channel
-    await engine.joinChannel(
-      token: AppIdToken.token,
-      channelId: AppIdToken.channel,
-      uid: 0, // Patient's UID
-      options: ChannelMediaOptions(),
-    );
-
-    // Set doctorUserId to the actual doctor's UID who is in the call
-    doctorUserId = 1; // Replace with actual doctor's UID
-    isInitialized.value = true;
-  }
-
-  void toggleMic() {
-    isMicOn.value = !isMicOn.value;
-    engine.muteLocalAudioStream(!isMicOn.value);
-  }
-
-  void toggleCamera() {
-    isCameraOn.value = !isCameraOn.value;
-    engine.muteLocalVideoStream(!isCameraOn.value);
   }
 
   void endCall() {
-    engine.leaveChannel();
-    Get.back();
+    agoraClient.engine.leaveChannel();
+  }
+
+  void toggleCamera() {
+    agoraClient.engine.switchCamera();
+  }
+
+  void toggleMic() {
+    agoraClient.engine.muteLocalAudioStream(true);
   }
 }
-

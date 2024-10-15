@@ -3,6 +3,8 @@ import 'package:agora/videoCall/view/view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'module/home/views/video_call_view.dart';
+
 void main() {
   runApp(MyApp());
 }
